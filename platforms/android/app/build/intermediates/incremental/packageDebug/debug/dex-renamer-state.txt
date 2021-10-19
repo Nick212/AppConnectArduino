@@ -1,0 +1,4 @@
+#Mon Nov 11 21:39:50 BRST 2019
+base.0=C\:\\repos\\AppAqualimp\\platforms\\android\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\0
+path.0=classes.dex
+renamed.0=classes.dex

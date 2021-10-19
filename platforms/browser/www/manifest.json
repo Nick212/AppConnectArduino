@@ -1,0 +1,11 @@
+{
+  "background_color": "#FFF",
+  "display": "standalone",
+  "name": "appacqualimp",
+  "short_name": "appacqualimp",
+  "version": "com.phonegap.appacqualimp",
+  "description": "App para uso do appacqualimp - Extrema",
+  "author": "appacqualimp",
+  "icons": [],
+  "start_url": "index.html"
+}

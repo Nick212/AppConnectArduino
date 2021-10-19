@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="viewport"
+        content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width" />
+    <!-- This is a wide open CSP declaration. To lock this down for production, see below. -->
+    <!-- <meta http-equiv="Content-Security-Policy"
+        content="default-src * 'unsafe-inline' gap:; style-src 'self' 'unsafe-inline'; media-src *" /> -->
+    <!-- Good default declaration:
+    * gap: is required only on iOS (when using UIWebView) and is needed for JS->native communication
+    * https://ssl.gstatic.com is required only on Android and is needed for TalkBack to function properly
+    * Disables use of eval() and inline scripts in order to mitigate risk of XSS vulnerabilities. To change this:
+        * Enable inline JS: add 'unsafe-inline' to default-src
+        * Enable eval(): add 'unsafe-eval' to default-src
+    * Create your own at http://cspisawesome.com
+    -->
+    <!-- <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self' data: gap: 'unsafe-inline' https://ssl.gstatic.com; style-src 'self' 'unsafe-inline'; media-src *" /> -->
+    <!-- <link rel="stylesheet" href="vendor/materialize/icons/material.css"> -->
+    <link rel="stylesheet" href="vendor/materialize/css/materialize.min.css">
+    <!-- <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+    <title>AppAcqualimp</title>
+</head>
+
+<style>
+    body {
+        background: #fff;
+    }
+
+    .titulo {
+        font-size: 1.3rem;
+        margin-left: 5%;
+        margin-right: auto;
+    }
+
+    .topo-fixo {
+        position: fixed;
+        top: 0;
+        width: 100%;
+        z-index: 2;
+    }
+
+    .tabs .indicator {
+        background-color: #F2F2F2;
+    }
+</style>
+
+<body>
+
+    <nav style="background-color: #012f55;">
+        <div class="nav-wrapper">
+            <a href="index.html" class="brand-logo center">
+                <span style="color: white;">Protótipo</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="" style="margin: 20px;">
+
+        <div class="row" id="form-data">
+            <br><br><br>
+            <div class="input-field col s12">
+                <input type="text" id="ip" placeholder="Ex: 192.168.1.5" autofocus value="192.168.6.79">
+                <label for="ip">IP do Dispositivo</label>
+            </div>
+
+            <div class="input-field col s12">
+
+                <input id="lta" name="lta" type="text" placeholder="Ex: 300, 500, 1000" value="100">
+                <label for="lta">Litros de água (por 1 centímetros)</label>
+            </div>
+
+            <div class="input-field col s12">
+                <input id="al" name="al" type="text" placeholder="" value="100">
+                <label for="al">Altura (centímetros)</label>
+            </div>
+
+            <div class="input-field col s12">
+                <input id="timer" name="timer" type="text" placeholder="30" value="5">
+                <label for="timer">Tempo de Leitura (segundos)</label>
+            </div>
+            <div class="input-field col s12">
+                <a id="startRead" class="col s12 waves-effect waves-light btn-large" style="background-color: #0a81e3;"
+                    href="#">Iniciar
+                    Leitura</a>
+            </div>
+            <br><br><br><br>
+        </div>
+        <div class="row" id="result-data" style="display:none;">
+            <div id="demo"></div>
+
+            <ul class="collection">
+                <li class="collection-item avatar" style="padding-left: 0px !important;">
+                    <span class="title" id="ip-Result"></span>
+                    <p>Data da Leitura: <span id="dh-read"></span></p>
+                    <p>Altura: <span id="result-al"></span></p>
+                    <p>Litros (cm): <span id="result-lta"></span></p>
+                    <p>Valor Medido: <span id="result-m"></span></p>
+                    <p>Tempo de Leitura: <span id="result-timer"></span></p>
+                    <hr>
+                    <p>Volume: <span id="result-v"></span></p>
+                    <hr>
+                    <p id="status-agua" style="display: none; color: red;">SUA ÁGUA ACABOU!</p>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+
+
+
+    <script src="vendor/js/jquery.js"></script>
+    <script src="vendor/materialize/js/materialize.min.js"></script>
+    <script type="text/javascript" src="cordova.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+
+            var v1 = 0;
+            var v2 = 0;
+
+            var count = 1;
+
+            var lock = false;
+
+            var myVar = setInterval(myTimer, 1000);
+            function myTimer() {
+                var d = new Date(), displayDate;
+                if (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) {
+                    displayDate = d.toLocaleTimeString('pt-BR');
+                } else {
+                    displayDate = d.toLocaleTimeString('pt-BR', { timeZone: 'America/Belem' });
+                }
+                document.getElementById("demo").innerHTML = displayDate;
+            }
+
+
+            Materialize.updateTextFields();
+            $('#form-data').show();
+            $('#result-data').hide();
+
+            var showResult = function (data) {
+
+                if (data === undefined || data.statusText == "error")
+                    data = 100;
+
+                Materialize.Toast.removeAll();
+
+                $('#form-data').hide();
+                $('#result-data').show();
+
+                var ip = $('#ip').val();
+                // data = "5"; //teste
+                var lta = $('#lta').val();
+                var al = $('#al').val();
+                var timer = $('#timer').val();
+
+                // if (v1 == 0) {
+                //     v1 = data;
+                //     v2 = data;
+                // }
+                // else {
+                //     v2 = v1;
+                //     v1 = data;
+                // }
+
+                // if (v2 > v1) {
+                //     count += 1;
+
+                //     if (count >= 5) {
+                //         $('#status-agua').show();
+                //     }
+                //     else {
+                //         count = 0;
+                //     }
+                // } else {
+                //     $('#status-agua').hide();
+                //     count = 0;
+                // }
+
+
+                $('#result-m').html(data);
+                $('#ip-Result').text(ip);
+                $('#dh-read').text(new Date().toLocaleString());
+                $('#status').text("Normal");
+                $('#result-al').text(al);
+                $('#result-lta').text(lta);
+                $('#result-timer').text(timer);
+
+                var volume = 0;
+                var volume = (al - data) * lta;
+                $('#result-v').text(volume + " / (Litros)");
+
+                $('#status-agua').hide();
+
+                // if (v4 > volume) {
+                //     $('#status-agua').show();
+                // }
+
+
+                //Primeira Leitura
+                if (count == 1) {
+                    v1 = volume;
+                    count = count + 1;
+                } else { // Demais leituras
+                    // Atualização de Leituras
+                    v1 = v2;
+                    v2 = volume;
+
+                    if (lock) {// Retornou a encher após ter esvaziado
+
+
+                        if (v2 > v1) {
+                            count = 1;
+                            lock = false;
+                            $('#status-agua').hide();
+                        } else
+                            $('#status-agua').show();
+                    }
+
+                    // if (v2 < v1 && !lock) { // Volume da Segunda Leitura foi menor que a anterior
+
+                    //Valida se está na última leitura e está vazio
+                    if (count == 4 && !lock) {
+                        $('#status-agua').show();
+                        lock = true;
+                    }
+                    if (v2 < v1 && count != 1 && !lock) {
+                        v2 = volume;
+                        count = count + 1;
+                    }
+                    else if (v2 == v1 && count > 1 && !lock) {
+                        count = count - 1;
+                    } else if (v2 == v1 && count <= 1 && !lock) {
+                        count = 1;
+                    }
+                    else if (count >= 4 && !lock) {
+                        count = 1;
+                    }
+                }
+                console.log(data);
+                readByTimer(timer * 1000);
+            }
+
+            var getPage = function () {
+                var ip = $('#ip').val();
+
+                Materialize.toast("Conectando com:" + ip, 20000);
+
+                var settings = {
+                    "async": true,
+                    "crossDomain": true,
+                    "crossOrigin": true,
+                    "url": "http://" + ip,
+                    "method": "GET",
+                    "headers": {
+                        "Accept": "*/*",
+                        "Host": ip,
+                        "Accept-Encoding": "gzip, deflate",
+                        "Connection": "keep-alive"
+                    }
+                }
+
+                $.ajax(settings)
+                    .done(function (data) {
+                        showResult(data);
+                    })
+                    .fail(function (xhr, status, error) {
+                        alert(xhr);
+                        alert(status);
+                        alert(error);
+                        // showResult(data);
+                    });
+            }
+
+            var readByTimer = function (timer) {
+                setTimeout(() => {
+                    getPage();
+                }, timer);
+            }
+
+            $('#startRead').on('click', getPage);
+        });
+
+    </script>
+</body>
+
+</html>
